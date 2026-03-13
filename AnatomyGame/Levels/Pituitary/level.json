@@ -1,0 +1,30 @@
+{
+  "image": "image.png",
+  "labels": [
+    {
+      "text": "Anterior lobe",
+      "x": 830.6,
+      "y": 291.3
+    },
+    {
+      "text": "Hypothalamus",
+      "x": 848.8,
+      "y": 99.1
+    },
+    {
+      "text": "Pituitary stalk",
+      "x": 853.3,
+      "y": 184.4
+    },
+    {
+      "text": "Posterior lobe",
+      "x": 839.7,
+      "y": 232.2
+    },
+    {
+      "text": "Sphenoid bone",
+      "x": 851.1,
+      "y": 408.5
+    }
+  ]
+}
