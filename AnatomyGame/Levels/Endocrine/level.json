@@ -1,0 +1,55 @@
+{
+  "image": "image.png",
+  "labels": [
+    {
+      "text": "Adrenal glands",
+      "x": 504.4,
+      "y": 512.0
+    },
+    {
+      "text": "Ovary",
+      "x": 552.5,
+      "y": 795.3
+    },
+    {
+      "text": "Pancreas",
+      "x": 509.4,
+      "y": 594.8
+    },
+    {
+      "text": "Parathyroid glands",
+      "x": 512.7,
+      "y": 632.9
+    },
+    {
+      "text": "Pineal gland",
+      "x": 463.0,
+      "y": 200.5
+    },
+    {
+      "text": "Pituitary gland",
+      "x": 454.7,
+      "y": 278.3
+    },
+    {
+      "text": "Testis",
+      "x": 550.8,
+      "y": 830.1
+    },
+    {
+      "text": "Thyroid gland",
+      "x": 512.7,
+      "y": 374.4
+    },
+    {
+      "text": "Hypothalamus",
+      "x": 473.0,
+      "y": 232.0
+    },
+    {
+      "text": "Thymus",
+      "x": 512.7,
+      "y": 412.6
+    }
+  ]
+}
