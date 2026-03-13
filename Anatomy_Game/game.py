@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BabyduckGame: place labels on the correct spots on an image.
+BabyduckGame: click on a shape, then type its name from the word bank.
 Load levels created by extract_pptx.py (after authoring).
 """
 
@@ -9,16 +9,41 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import random
 import sys
 from pathlib import Path
 
+LEVEL_NAMES = {
+    "anatomy": "TESTES",
+    "endocrine": "MAJOR ENDOCRINE GLANDS",
+    "pituitary": "PITUITARY GLAND",
+    "thyroid": "THYROID GLAND",
+    "thyroid2": "THYROID GLAND 2",
+    "parathyroid": "PARATHYROID GLANDS",
+    "adrenal": "ADRENAL GLANDS",
+}
+
 try:
     from PIL import Image
-    import io
 except ImportError:
     Image = None
-    io = None
+
+
+def get_available_levels(levels_dir: Path = Path("levels")) -> list[tuple[str, Path]]:
+    """Return list of (display_name, path) for playable levels."""
+    result = []
+    if not levels_dir.is_dir():
+        return result
+    for d in sorted(levels_dir.iterdir()):
+        if not d.is_dir():
+            continue
+        if (d / "level.json").exists():
+            try:
+                load_level(d)
+            except (FileNotFoundError, ValueError):
+                continue
+            name = LEVEL_NAMES.get(d.name, d.name.replace("_", " ").title())
+            result.append((name, d))
+    return result
 
 
 def load_level(level_dir: Path) -> tuple[Path, list[dict]]:
@@ -37,20 +62,27 @@ def load_level(level_dir: Path) -> tuple[Path, list[dict]]:
     return image_path, labels
 
 
-def run_game(level_dir: Path, tolerance: float = 40.0) -> None:
-    """Run the label-pinpoint game for one level."""
+def run_game(level_dir: Path, tolerance: float = 80.0) -> None:
+    """Run BabyduckGame: click shape, type its name."""
     import tkinter as tk
     from tkinter import font as tkfont
+    from tkinter import simpledialog, messagebox
 
     image_path, labels = load_level(Path(level_dir))
     if not Image:
         raise RuntimeError("Pillow required. pip install Pillow")
 
+    root = tk.Tk()
+    root.title("BabyduckGame")
+    root.geometry("1100x720")
+    root.configure(bg="#f0d4e0")
+
     img = Image.open(image_path).convert("RGB")
     orig_w, orig_h = img.size
-    placed: dict[str, tuple[float, float]] = {}
-    shuffled = list(labels)
-    random.shuffle(shuffled)
+    identified_indices: set[int] = set()
+
+    # Word bank: (display_text, index), sorted by display text
+    word_bank = sorted([(lb["text"], i) for i, lb in enumerate(labels)], key=lambda x: x[0].lower())
 
     # Scale and offset for drawing (image fit within canvas)
     canvas_w, canvas_h = 900, 600
@@ -68,53 +100,75 @@ def run_game(level_dir: Path, tolerance: float = 40.0) -> None:
     def to_canvas_coords(ix: float, iy: float) -> tuple[int, int]:
         return (int(off_x + ix * scale), int(off_y + iy * scale))
 
-    root = tk.Tk()
-    root.title("BabyduckGame")
-    root.geometry("1100x720")
-    root.configure(bg="#1a1b26")
+    def find_nearest_label(ix: float, iy: float) -> tuple[dict, int] | None:
+        """Return (label, index) whose target is nearest to (ix, iy), if within tolerance."""
+        best = None
+        best_idx = -1
+        best_d = float("inf")
+        for i, lb in enumerate(labels):
+            tx, ty = float(lb["x"]), float(lb["y"])
+            d = math.hypot(ix - tx, iy - ty)
+            if d <= tolerance and d < best_d:
+                best = lb
+                best_idx = i
+                best_d = d
+        return (best, best_idx) if best else None
 
-    main = tk.Frame(root, bg="#1a1b26", padx=12, pady=12)
+    levels_dir = level_dir.resolve().parent
+    available = get_available_levels(levels_dir)
+    current_name = LEVEL_NAMES.get(level_dir.name, level_dir.name.replace("_", " ").title())
+
+    def switch_level():
+        sel = level_var.get()
+        for name, path in available:
+            if name == sel:
+                root.destroy()
+                run_game(path, tolerance)
+                return
+
+    top = tk.Frame(root, bg="#f0d4e0", padx=12, pady=6)
+    top.pack(fill=tk.X)
+    header_font = tkfont.Font(family="Segoe UI", size=14, weight="bold")
+    tk.Label(top, text="Level:", font=header_font, fg="#2d2d2d", bg="#f0d4e0").pack(side=tk.LEFT, padx=(0, 8))
+    level_var = tk.StringVar(value=current_name)
+    if available:
+        names = [n for n, _ in available]
+        om = tk.OptionMenu(top, level_var, *names, command=lambda _: switch_level())
+        om.config(font=header_font, fg="#2d2d2d", bg="#d4a5b5", relief=tk.FLAT)
+        om.pack(side=tk.LEFT)
+
+    main = tk.Frame(root, bg="#f0d4e0", padx=12, pady=12)
     main.pack(fill=tk.BOTH, expand=True)
 
     header_font = tkfont.Font(family="Segoe UI", size=14, weight="bold")
     normal_font = tkfont.Font(family="Segoe UI", size=11)
-    status_var = tk.StringVar(value="Select a label, then click on the image where it belongs.")
-    tk.Label(main, textvariable=status_var, font=header_font, fg="#a9b1d6", bg="#1a1b26").pack(pady=(0, 8))
+    word_bank_font = tkfont.Font(family="Segoe UI", size=11, weight="bold")
+    status_var = tk.StringVar(value="Click on a shape, then type its name when prompted.")
+    tk.Label(main, textvariable=status_var, font=header_font, fg="#2d2d2d", bg="#f0d4e0").pack(pady=(0, 8))
 
-    content = tk.Frame(main, bg="#1a1b26")
+    content = tk.Frame(main, bg="#f0d4e0")
     content.pack(fill=tk.BOTH, expand=True)
 
-    left = tk.Frame(content, bg="#16161e", width=200, padx=10, pady=10)
+    left = tk.Frame(content, bg="#ebc8d4", width=200, padx=10, pady=10)
     left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
     left.pack_propagate(False)
-    tk.Label(left, text="Labels", font=header_font, fg="#7aa2f7", bg="#16161e").pack(anchor=tk.W)
-    tk.Label(left, text="Click one, then click on the image.", font=normal_font, fg="#565f89", bg="#16161e").pack(anchor=tk.W, pady=(0, 8))
+    tk.Label(left, text="Word Bank", font=header_font, fg="#2d2d2d", bg="#ebc8d4").pack(anchor=tk.W)
+    desc = tk.Label(left, text="Click on a pink box, then type the name of the gland that it points to.", font=normal_font, fg="#4a4a4a", bg="#ebc8d4", wraplength=180, justify=tk.LEFT)
+    desc.pack(anchor=tk.W, pady=(0, 8))
 
-    selected = [None]
+    # Word bank labels (read-only, update styling when identified)
+    word_labels: list[tuple[str, int, tk.Label]] = []
+    for display_text, idx in word_bank:
+        lb = tk.Label(left, text=display_text, font=word_bank_font, fg="#ffffff", bg="#ebc8d4", anchor=tk.W, wraplength=180, justify=tk.LEFT)
+        lb.pack(fill=tk.X, pady=2)
+        word_labels.append((display_text, idx, lb))
 
-    def on_label_click(lb: dict):
-        selected[0] = lb
-        for w in left.winfo_children():
-            if isinstance(w, tk.Button):
-                w.configure(bg="#414868" if w.cget("text") == lb["text"] else "#24283b", fg="#c0caf5")
-        status_var.set(f"Selected: '{lb['text']}' — click on the image to place it.")
-
-    for lb in shuffled:
-        btn = tk.Button(
-            left,
-            text=lb["text"],
-            font=normal_font,
-            bg="#24283b",
-            fg="#c0caf5",
-            activebackground="#414868",
-            activeforeground="#c0caf5",
-            relief=tk.FLAT,
-            padx=8,
-            pady=6,
-            anchor=tk.W,
-            command=lambda l=lb: on_label_click(l),
-        )
-        btn.pack(fill=tk.X, pady=2)
+    def update_word_bank():
+        for _, idx, wl in word_labels:
+            if idx in identified_indices:
+                wl.configure(fg="#ffffff")
+            else:
+                wl.configure(fg="#ffffff")
 
     resample = getattr(Image, "Resampling", None)
     resample = (resample.LANCZOS if resample else None) or getattr(Image, "LANCZOS", Image.NEAREST)
@@ -125,14 +179,13 @@ def run_game(level_dir: Path, tolerance: float = 40.0) -> None:
     except Exception:
         photo = None
 
-    canvas = tk.Canvas(content, width=canvas_w, height=canvas_h, bg="#24283b", highlightthickness=0)
+    canvas = tk.Canvas(content, width=canvas_w, height=canvas_h, bg="#e8c4d0", highlightthickness=0)
     canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     if photo:
         canvas.create_image(off_x + disp_w // 2, off_y + disp_h // 2, image=photo, tags="img")
         canvas.image = photo
 
-    # Draw image outline
-    canvas.create_rectangle(off_x, off_y, off_x + disp_w, off_y + disp_h, outline="#7aa2f7", width=1, tags="border")
+    canvas.create_rectangle(off_x, off_y, off_x + disp_w, off_y + disp_h, outline="#c99aa8", width=1, tags="border")
 
     marker_ids: list[int] = []
 
@@ -140,80 +193,71 @@ def run_game(level_dir: Path, tolerance: float = 40.0) -> None:
         for mid in marker_ids:
             canvas.delete(mid)
         marker_ids.clear()
-        canvas.delete("correct")
 
-    def draw_markers():
+    def draw_checkmarks():
+        """Draw green checkmarks on correctly identified shapes."""
         clear_markers()
-        for lb, (ux, uy) in placed.items():
-            cx, cy = to_canvas_coords(ux, uy)
-            r = 6
-            mid = canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill="#7dcfff", outline="#7aa2f7", width=2, tags="marker")
-            marker_ids.append(mid)
-            tid = canvas.create_text(cx, cy - 14, text=lb, font=("Segoe UI", 9), fill="#c0caf5", tags="marker")
-            marker_ids.append(tid)
+        for i, lb in enumerate(labels):
+            if i in identified_indices:
+                cx, cy = to_canvas_coords(lb["x"], lb["y"])
+                r = 8
+                mid = canvas.create_oval(cx - r, cy - r, cx + r, cy + r, outline="#c99aa8", width=2, fill="#c99aa8", tags="marker")
+                marker_ids.append(mid)
 
     def on_canvas_click(event):
-        lb = selected[0]
-        if not lb or lb["text"] in placed:
-            return
-        ix, iy = to_image_coords(event.x, event.y)
         if not (off_x <= event.x <= off_x + disp_w and off_y <= event.y <= off_y + disp_h):
             return
-        placed[lb["text"]] = (ix, iy)
-        draw_markers()
-        remaining = [l["text"] for l in shuffled if l["text"] not in placed]
-        if not remaining:
-            status_var.set("All placed! Click 'Check' to see your score.")
+        ix, iy = to_image_coords(event.x, event.y)
+        result = find_nearest_label(ix, iy)
+        if not result:
+            status_var.set("No shape there — try clicking closer to the center of a shape.")
+            return
+        target, target_idx = result
+        if target_idx in identified_indices:
+            status_var.set(f"'{target['text']}' is already identified. Click another shape.")
+            return
+
+        root.update()
+        user_input = simpledialog.askstring(
+            "Name this gland",
+            "What is this gland?",
+            parent=root,
+        )
+        if user_input is None:
+            status_var.set("Click on a shape, then type its name when prompted.")
+            return
+
+        answer = target.get("answer", target["text"])
+        if user_input.strip().lower() == answer.lower():
+            identified_indices.add(target_idx)
+            draw_checkmarks()
+            update_word_bank()
+            if len(identified_indices) == len(labels):
+                status_var.set("All correct! Well done!")
+                messagebox.showinfo("BabyduckGame", "You identified all shapes correctly!")
+            else:
+                status_var.set(f"Correct! {len(identified_indices)}/{len(labels)} identified.")
         else:
-            status_var.set(f"Placed '{lb['text']}'. Select another label, or click 'Check' when done.")
+            status_var.set(f"Incorrect. The correct answer was '{target['text']}'.")
+            messagebox.showinfo("Incorrect", f"The correct answer is: {target['text']}")
 
     canvas.bind("<Button-1>", on_canvas_click)
 
-    def check():
-        if len(placed) != len(labels):
-            status_var.set("Place all labels first, then check.")
-            return
-        correct = 0
-        for lb in labels:
-            ux, uy = placed.get(lb["text"], (0, 0))
-            tx, ty = float(lb["x"]), float(lb["y"])
-            d = math.hypot(ux - tx, uy - ty)
-            if d <= tolerance:
-                correct += 1
-        pct = 100 * correct / len(labels)
-        status_var.set(f"Score: {correct}/{len(labels)} ({pct:.0f}%) correct within {tolerance:.0f} px.")
-        for lb in labels:
-            cx, cy = to_canvas_coords(lb["x"], lb["y"])
-            r = 8
-            canvas.create_oval(cx - r, cy - r, cx + r, cy + r, outline="#9ece6a", width=2, dash=(4, 4), tags="correct")
-        btn_check.config(state=tk.DISABLED)
-        btn_reset.config(state=tk.NORMAL)
-
     def reset():
-        placed.clear()
+        identified_indices.clear()
         clear_markers()
-        for w in left.winfo_children():
-            if isinstance(w, tk.Button):
-                w.configure(bg="#24283b", fg="#c0caf5")
-        selected[0] = None
-        status_var.set("Select a label, then click on the image where it belongs.")
-        btn_check.config(state=tk.NORMAL)
-        btn_reset.config(state=tk.DISABLED)
+        update_word_bank()
+        status_var.set("Click on a shape, then type its name when prompted.")
 
-    btns = tk.Frame(main, bg="#1a1b26")
-    btns.pack(pady=10)
-    btn_check = tk.Button(btns, text="Check", font=header_font, fg="#1a1b26", bg="#7aa2f7", activebackground="#89b4fa", relief=tk.FLAT, padx=20, pady=8, command=check)
-    btn_check.pack(side=tk.LEFT, padx=4)
-    btn_reset = tk.Button(btns, text="Reset", font=header_font, fg="#1a1b26", bg="#565f89", activebackground="#414868", relief=tk.FLAT, padx=20, pady=8, command=reset, state=tk.DISABLED)
-    btn_reset.pack(side=tk.LEFT, padx=4)
+    tk.Button(main, text="Reset", font=header_font, fg="#4a3a3a", bg="#d4a5b5", activebackground="#c99aa8", relief=tk.FLAT, padx=20, pady=8, command=reset).pack(pady=10)
 
     root.mainloop()
 
 
 def main():
     ap = argparse.ArgumentParser(description="Run BabyduckGame.")
-    ap.add_argument("level", type=Path, nargs="?", default=Path("levels/sample"), help="Level directory (e.g. levels/sample or levels/slide_0)")
-    ap.add_argument("-t", "--tolerance", type=float, default=40, help="Pixel tolerance for correct placement")
+    ap.add_argument("level", type=Path, nargs="?", default=Path("levels/anatomy"), help="Level directory (e.g. levels/anatomy or levels/endocrine)")
+    ap.add_argument("-t", "--tolerance", type=float, default=80, help="Pixel tolerance for click-to-select shape (larger = easier to click)")
     args = ap.parse_args()
     level_dir = Path(args.level)
     if not level_dir.is_dir():

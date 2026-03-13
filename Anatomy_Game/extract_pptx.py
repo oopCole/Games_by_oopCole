@@ -206,18 +206,18 @@ def run_authoring(level_dir: Path) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="Extract images and labels from PowerPoint for BabyduckGame.")
-    ap.add_argument("pptx", type=Path, help="Path to .pptx file")
+    ap.add_argument("pptx", type=Path, nargs="?", default=None, help="Path to .pptx file (optional when using --author)")
     ap.add_argument("-o", "--output", type=Path, default=Path("levels"), help="Output directory for levels")
     ap.add_argument("-s", "--slide", type=int, default=None, help="Extract only this 0-based slide index")
-    ap.add_argument("--author", type=Path, default=None, help="Run authoring for this level dir (e.g. levels/slide_0)")
+    ap.add_argument("--author", type=Path, default=None, help="Run authoring for this level dir (e.g. levels/anatomy)")
     args = ap.parse_args()
 
     if args.author:
         run_authoring(Path(args.author))
         return
 
-    if not args.pptx.exists():
-        print(f"Not found: {args.pptx}", file=sys.stderr)
+    if not args.pptx or not args.pptx.exists():
+        print("Provide a .pptx file to extract from.", file=sys.stderr)
         sys.exit(1)
     dirs = extract_pptx(args.pptx, args.output, args.slide)
     print(f"Extracted {len(dirs)} level(s):")

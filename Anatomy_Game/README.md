@@ -1,12 +1,12 @@
 # BabyduckGame
 
-A small interactive game that uses **images and labels from PowerPoint slides**. You place each label on the correct spot on the image (e.g. diagram parts, map locations). Great for anatomy, geography, or any labeled-diagram practice.
+A small interactive game that uses **images and labels from PowerPoint slides**. Click on a shape in the image, then type its name from the word bank. Spelling must be correct; capitalization does not matter. You place each label on the correct spot on the image (e.g. diagram parts, map locations). Great for anatomy, geography, or any labeled-diagram practice.
 
 ## Quick start (no PowerPoint)
 
 1. Install deps and create a sample level:
    ```bash
-   cd label-pinpoint-game
+   cd BabyduckGame
    pip install -r requirements.txt
    python create_sample_level.py
    ```
@@ -43,9 +43,10 @@ A window opens with the level image. **Click where each label points** (in order
 python game.py levels/slide_0
 ```
 
-- Select a label in the list, then **click on the image** where it belongs.
-- Place all labels, then click **Check** to see your score.
-- Use **Reset** to try again. Green dashed circles show the correct positions after checking.
+- A **word bank** (alphabetical) lists all labels.
+- **Click on a shape** in the image, then type its name when prompted.
+- Spelling must be correct; capitalization does not matter.
+- Use **Reset** to start over.
 
 ### Options
 
@@ -60,7 +61,7 @@ python game.py levels/slide_0
 ## Project layout
 
 ```
-label-pinpoint-game/
+BabyduckGame/
   extract_pptx.py      # Extract from .pptx, run authoring
   game.py              # Main game UI
   create_sample_level.py
@@ -76,3 +77,22 @@ label-pinpoint-game/
 - **PowerPoint:** Use one main image per slide (diagram, map) and separate text boxes for each label. The extractor picks the largest picture and all short text shapes (≤200 chars) as labels.
 - **Authoring:** Click the **exact** spot the label should point to (e.g. center of a region or end of a line).
 - **Tolerance:** If correctly placed labels often score wrong, increase `-t` (e.g. `-t 60`).
+
+## Anatomy level (custom image)
+
+To use your own diagram (e.g. the male reproductive system anatomy image):
+
+1. Place your image at `levels/anatomy/image.png` (use an image with pointer lines but **no text labels**—only the word bank will show labels).
+2. Run setup to create level data:
+   ```bash
+   python setup_anatomy_level.py
+   ```
+3. Run authoring to define where each part is:
+   ```bash
+   python extract_pptx.py --author levels/anatomy
+   ```
+   Click on each anatomical structure when prompted.
+4. Play:
+   ```bash
+   python game.py levels/anatomy
+   ```
