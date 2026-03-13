@@ -1,0 +1,35 @@
+{
+  "image": "image.png",
+  "labels": [
+    {
+      "text": "Cricoid cartilage",
+      "x": 820.9,
+      "y": 425.2
+    },
+    {
+      "text": "Isthmus of thyroid gland",
+      "x": 838.3,
+      "y": 622.1
+    },
+    {
+      "text": "Larynx",
+      "x": 1055.4,
+      "y": 299.2
+    },
+    {
+      "text": "Thyroid cartilage",
+      "x": 818.0,
+      "y": 179.1
+    },
+    {
+      "text": "Thyroid gland",
+      "x": 63.7,
+      "y": 556.9
+    },
+    {
+      "text": "Trachea",
+      "x": 815.1,
+      "y": 722.0
+    }
+  ]
+}
