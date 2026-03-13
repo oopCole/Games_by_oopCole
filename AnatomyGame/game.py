@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-BabyduckGame: click on a shape, then type its name from the word bank.
-Load levels created by extract_pptx.py (after authoring).
-"""
 
 from __future__ import annotations
 
@@ -81,10 +77,10 @@ def run_game(level_dir: Path, tolerance: float = 80.0) -> None:
     orig_w, orig_h = img.size
     identified_indices: set[int] = set()
 
-    # Word bank: (display_text, index), sorted by display text
+    # word bank: (display_text, index), sorted by display text
     word_bank = sorted([(lb["text"], i) for i, lb in enumerate(labels)], key=lambda x: x[0].lower())
 
-    # Scale and offset for drawing (image fit within canvas)
+    # scale and offset for drawing (image fit within canvas)
     canvas_w, canvas_h = 900, 600
     scale = min(canvas_w / orig_w, canvas_h / orig_h)
     disp_w = int(orig_w * scale)
@@ -156,7 +152,7 @@ def run_game(level_dir: Path, tolerance: float = 80.0) -> None:
     desc = tk.Label(left, text="Click on a pink box, then type the name of the gland that it points to.", font=normal_font, fg="#4a4a4a", bg="#ebc8d4", wraplength=180, justify=tk.LEFT)
     desc.pack(anchor=tk.W, pady=(0, 8))
 
-    # Word bank labels (read-only, update styling when identified)
+    # word bank labels (read-only)
     word_labels: list[tuple[str, int, tk.Label]] = []
     for display_text, idx in word_bank:
         lb = tk.Label(left, text=display_text, font=word_bank_font, fg="#ffffff", bg="#ebc8d4", anchor=tk.W, wraplength=180, justify=tk.LEFT)
