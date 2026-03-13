@@ -1,0 +1,30 @@
+{
+  "image": "image.png",
+  "labels": [
+    {
+      "text": "Esophagus",
+      "x": 675.0,
+      "y": 755.1
+    },
+    {
+      "text": "Lobes of thyroid gland",
+      "x": 681.5,
+      "y": 359.6
+    },
+    {
+      "text": "Parathyroid glands",
+      "x": 718.9,
+      "y": 587.5
+    },
+    {
+      "text": "Pharynx",
+      "x": 657.1,
+      "y": 213.2
+    },
+    {
+      "text": "Trachea",
+      "x": 696.1,
+      "y": 844.6
+    }
+  ]
+}
