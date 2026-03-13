@@ -1,0 +1,25 @@
+{
+  "image": "image.png",
+  "labels": [
+    {
+      "text": "Colloid of thyroglobulin",
+      "x": 134.3,
+      "y": 431.9
+    },
+    {
+      "text": "Follicle",
+      "x": 38.7,
+      "y": 298.7
+    },
+    {
+      "text": "Follicular cells",
+      "x": 91.0,
+      "y": 247.5
+    },
+    {
+      "text": "Parafollicular cells",
+      "x": 121.7,
+      "y": 188.4
+    }
+  ]
+}
