@@ -1,0 +1,45 @@
+{
+  "image": "image.png",
+  "labels": [
+    {
+      "text": "Ductus deferens",
+      "x": 302.3,
+      "y": 173.0
+    },
+    {
+      "text": "Epididymis",
+      "x": 311.5,
+      "y": 238.4
+    },
+    {
+      "text": "Interstitial cells",
+      "x": 798.5,
+      "y": 281.9
+    },
+    {
+      "text": "Lumen of seminiferous tubule with spermatozoon",
+      "x": 832.9,
+      "y": 467.6
+    },
+    {
+      "text": "Scrotum",
+      "x": 136.1,
+      "y": 501.9
+    },
+    {
+      "text": "Seminiferous tubule",
+      "x": 301.1,
+      "y": 452.7
+    },
+    {
+      "text": "Spermatic cord",
+      "x": 309.2,
+      "y": 95.1
+    },
+    {
+      "text": "Spermatogonia",
+      "x": 783.6,
+      "y": 587.9
+    }
+  ]
+}
